@@ -7,14 +7,16 @@
     <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
+    <canvas id="asteroids-bg"></canvas>
     <div class="container">
         <h1 class="title">Eternal Space</h1>
-        <canvas id="asteroids-bg"></canvas>
         <button id="play-btn">Jugar</button>
     </div>
     <audio id="menu-music" src="assets/audio/Infinite Silence.mp3" loop autoplay></audio>
-    <audio id="start-sound" src="assets/audio/start.wav"></audio>
     <script src="scripts/menu-bg.js"></script>
+    <script src="scripts/game-audio.js"></script>
+    <script src="scripts/game-core.js"></script>
+    <script src="scripts/game-transition.js"></script>
     <script src="scripts/menu-audio.js"></script>
 </body>
 </html>

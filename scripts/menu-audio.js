@@ -1,65 +1,39 @@
+const MUSIC_PREF_KEY = 'eternalSpaceMusicEnabled';
 const menuMusic = document.getElementById('menu-music');
 let soundBtn = null;
+
+let isMusicEnabled = true;
 let isMusicPlaying = false;
+
+function loadPreference() {
+    try {
+        const stored = localStorage.getItem(MUSIC_PREF_KEY);
+        if (stored === null) return true;
+        return stored === '1';
+    } catch (err) {
+        return true;
+    }
+}
+
+function savePreference() {
+    try {
+        localStorage.setItem(MUSIC_PREF_KEY, isMusicEnabled ? '1' : '0');
+    } catch (err) {
+        // Ignorar restricciones de almacenamiento
+    }
+}
 
 function updateSoundBtn() {
     if (!soundBtn) return;
-    soundBtn.textContent = isMusicPlaying ? 'Quitar sonido' : 'Activar sonido';
-    soundBtn.classList.toggle('active', isMusicPlaying);
+    const runningGame = !!window.Game?.isRunning?.();
+    const playing = runningGame ? isMusicEnabled : isMusicPlaying;
+    const label = isMusicEnabled && playing ? 'Quitar sonido' : 'Activar sonido';
+    soundBtn.textContent = label;
+    soundBtn.classList.toggle('active', isMusicEnabled && playing);
 }
 
-async function toggleMusic() {
-    if (!menuMusic) return;
-    if (isMusicPlaying) {
-        await fadeVolume(menuMusic, 0, 600);
-        menuMusic.pause();
-        isMusicPlaying = false;
-    } else {
-        try {
-            menuMusic.volume = 0;
-            await menuMusic.play();
-            await fadeVolume(menuMusic, 0.6, 800);
-            isMusicPlaying = true;
-        } catch (err) {
-            isMusicPlaying = false;
-        }
-    }
-    updateSoundBtn();
-}
-
-function createSoundButtonIfNeeded() {
-    if (document.getElementById('sound-activate')) {
-        soundBtn = document.getElementById('sound-activate');
-        return;
-    }
-    soundBtn = document.createElement('button');
-    soundBtn.id = 'sound-activate';
-    soundBtn.className = 'sound-activate';
-    soundBtn.textContent = isMusicPlaying ? 'Quitar sonido' : 'Activar sonido';
-    soundBtn.addEventListener('click', toggleMusic);
-    soundBtn.addEventListener('mouseenter', () => soundBtn.classList.add('hovered'));
-    soundBtn.addEventListener('mouseleave', () => soundBtn.classList.remove('hovered'));
-    soundBtn.addEventListener('touchstart', () => soundBtn.classList.add('hovered'));
-    soundBtn.addEventListener('touchend', () => soundBtn.classList.remove('hovered'));
-    document.body.appendChild(soundBtn);
-}
-
-async function tryPlayMusic() {
-    if (!menuMusic) return;
-    createSoundButtonIfNeeded();
-    try {
-        menuMusic.volume = 0;
-        await menuMusic.play();
-        await fadeVolume(menuMusic, 0.6, 800);
-        isMusicPlaying = true;
-    } catch (e) {
-        isMusicPlaying = false;
-    }
-    updateSoundBtn();
-}
-
-function fadeVolume(audioEl, target, duration) {
-    return new Promise((resolve) => {
+async function fadeVolume(audioEl, target, duration) {
+    return new Promise(resolve => {
         const start = performance.now();
         const initial = Number(audioEl.volume) || 0;
         const diff = target - initial;
@@ -73,62 +47,132 @@ function fadeVolume(audioEl, target, duration) {
     });
 }
 
-if (menuMusic) {
-    menuMusic.loop = true;
-    menuMusic.addEventListener('ended', () => {
-        menuMusic.currentTime = 0;
-        menuMusic.play();
-    });
+async function resumeMenuMusic({ fade = true } = {}) {
+    if (!menuMusic || !isMusicEnabled) {
+        isMusicPlaying = false;
+        updateSoundBtn();
+        return;
+    }
+    try {
+        menuMusic.loop = true;
+        if (menuMusic.paused) {
+            menuMusic.volume = fade ? 0 : 0.6;
+            await menuMusic.play();
+        }
+        if (fade) {
+            await fadeVolume(menuMusic, 0.6, 600);
+        } else {
+            menuMusic.volume = 0.6;
+        }
+        isMusicPlaying = true;
+    } catch (err) {
+        isMusicPlaying = false;
+    }
+    updateSoundBtn();
 }
 
-window.addEventListener('load', () => {
-    if (menuMusic) {
-        menuMusic.loop = true;
-        menuMusic.volume = 0.6;
+async function stopMenuMusic({ fade = true } = {}) {
+    if (!menuMusic) return;
+    if (fade) await fadeVolume(menuMusic, 0, 500);
+    menuMusic.pause();
+    isMusicPlaying = false;
+    updateSoundBtn();
+}
+
+async function handleSoundToggle() {
+    if (!isMusicEnabled) {
+        isMusicEnabled = true;
+        savePreference();
+        if (window.Game?.isRunning?.()) {
+            await window.GameAudio?.playRandomTrack?.();
+            isMusicPlaying = true;
+            updateSoundBtn();
+        } else {
+            await resumeMenuMusic();
+        }
+        return;
     }
-    tryPlayMusic();
-});
+    if (!isMusicPlaying) {
+        if (window.Game?.isRunning?.()) {
+            await window.GameAudio?.playRandomTrack?.();
+            isMusicPlaying = true;
+            updateSoundBtn();
+        } else {
+            await resumeMenuMusic();
+        }
+        return;
+    }
+    isMusicEnabled = false;
+    savePreference();
+    await stopMenuMusic({ fade: true });
+    await window.GameAudio?.handlePreferenceDisabled?.();
+}
+
+function createSoundButtonIfNeeded() {
+    if (document.getElementById('sound-activate')) {
+        soundBtn = document.getElementById('sound-activate');
+    } else {
+        soundBtn = document.createElement('button');
+        soundBtn.id = 'sound-activate';
+        soundBtn.className = 'sound-activate';
+        document.body.appendChild(soundBtn);
+    }
+    soundBtn.addEventListener('click', () => handleSoundToggle());
+    soundBtn.addEventListener('mouseenter', () => soundBtn.classList.add('hovered'));
+    soundBtn.addEventListener('mouseleave', () => soundBtn.classList.remove('hovered'));
+    soundBtn.addEventListener('touchstart', () => soundBtn.classList.add('hovered'));
+    soundBtn.addEventListener('touchend', () => soundBtn.classList.remove('hovered'));
+}
 
 const playBtn = document.getElementById('play-btn');
 const title = document.querySelector('.title');
 const container = document.querySelector('.container');
-const startSound = document.getElementById('start-sound');
 
 if (playBtn) {
     playBtn.addEventListener('click', async () => {
-        // Fade out música menú
-        if (menuMusic && !menuMusic.paused) {
-            await fadeVolume(menuMusic, 0, 600);
-            menuMusic.pause();
-            isMusicPlaying = false;
-            updateSoundBtn();
-        }
-        // Sonido 8-bit generado
-        play8BitSound();
-        // Animar salida de menú
+        await stopMenuMusic({ fade: true });
+        window.play8BitSound?.();
         if (title) title.classList.add('fade-out-up');
         if (playBtn) playBtn.classList.add('fade-out-up');
-        if (soundBtn) soundBtn.classList.add('fade-out-up');
-        // Lanzar transición de avance
+        const soundCtrl = soundBtn || document.getElementById('sound-activate');
+        if (soundCtrl) soundCtrl.classList.add('fade-out-up');
         setTimeout(() => {
             if (container) container.classList.add('hide-menu');
-            if (window.startGameTransition) window.startGameTransition();
+            window.GameTransition?.start?.();
         }, 700);
     });
 }
 
 // Efecto 8-bit simple para botón
-function play8BitSound() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'square';
-    o.frequency.setValueAtTime(440, ctx.currentTime);
-    o.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.09);
-    g.gain.setValueAtTime(0.18, ctx.currentTime);
-    g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.13);
-    o.connect(g).connect(ctx.destination);
-    o.start();
-    o.stop(ctx.currentTime + 0.13);
-    o.onended = () => ctx.close();
-}
+window.play8BitSound = function play8BitSound() {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 0.09);
+    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.13);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.13);
+    osc.onended = () => audioCtx.close();
+};
+
+window.MenuAudio = {
+    resumeMenuMusic,
+    stopMenuMusic,
+    isEnabled: () => isMusicEnabled
+};
+
+window.addEventListener('load', async () => {
+    isMusicEnabled = loadPreference();
+    createSoundButtonIfNeeded();
+    updateSoundBtn();
+    if (isMusicEnabled) {
+        await resumeMenuMusic({ fade: false });
+    } else if (menuMusic) {
+        menuMusic.pause();
+        menuMusic.currentTime = 0;
+    }
+});

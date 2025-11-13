@@ -1,147 +1,175 @@
-// Fondo animado de asteroides para la pantalla de inicio
-const canvas = document.getElementById('asteroids-bg');
-const ctx = canvas.getContext('2d');
-let asteroids = [];
-const ASTEROID_COUNT = 25;
+// Control exclusivo del fondo de asteroides del menú
+(function () {
+    const canvas = document.getElementById('asteroids-bg');
+    const ctx = canvas.getContext('2d');
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+    const ASTEROID_COUNT = 25;
+    const STAR_COUNT = 110;
+    let asteroids = [];
+    let stars = [];
+    let isRunning = false;
+    let animationFrame = null;
 
-function randomAsteroid() {
-    const size = Math.random() * 30 + 20;
-    return {
-        x: Math.random() * canvas.width,
-        y: Math.random() * -canvas.height,
-        size,
-        speed: Math.random() * 0.7 + 0.3,
-        angle: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.008
-    };
-}
-
-function drawAsteroid(a) {
-    ctx.save();
-    ctx.translate(a.x, a.y);
-    ctx.rotate(a.angle);
-    ctx.beginPath();
-    const vertices = 12;
-    for (let i = 0; i < vertices; i++) {
-        const angle = (i / vertices) * Math.PI * 2;
-        const r = a.size * (0.75 + Math.sin(i * 1.7 + a.angle) * 0.13 + Math.random() * 0.18);
-        ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
-    ctx.closePath();
-    const grad = ctx.createRadialGradient(0, 0, a.size * 0.2, 0, 0, a.size);
-    grad.addColorStop(0, '#e0e0e0');
-    grad.addColorStop(0.5, '#888');
-    grad.addColorStop(1, '#222');
-    ctx.fillStyle = grad;
-    ctx.shadowColor = '#222';
-    ctx.shadowBlur = 18;
-    ctx.globalAlpha = 0.92;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.restore();
-}
 
-function updateAsteroids() {
-    for (let a of asteroids) {
-        a.y += a.speed;
-        a.angle += a.rotSpeed;
-        if (a.y - a.size > canvas.height) {
-            Object.assign(a, randomAsteroid());
-            a.y = -a.size;
+    function randomAsteroid() {
+        const size = Math.random() * 30 + 20;
+        return {
+            x: Math.random() * canvas.width,
+            y: -Math.random() * canvas.height,
+            size,
+            speed: Math.random() * 0.6 + 0.35,
+            angle: Math.random() * Math.PI * 2,
+            rotSpeed: Math.random() * 0.02 - 0.01
+        };
+    }
+
+    function drawAsteroid(asteroid) {
+        ctx.save();
+        ctx.translate(asteroid.x, asteroid.y);
+        ctx.rotate(asteroid.angle);
+        ctx.beginPath();
+        const vertices = 12;
+        for (let i = 0; i < vertices; i++) {
+            const rad = (i / vertices) * Math.PI * 2;
+            const radius = asteroid.size * (0.75 + Math.sin(i * 1.7 + asteroid.angle) * 0.13 + Math.random() * 0.18);
+            ctx.lineTo(Math.cos(rad) * radius, Math.sin(rad) * radius);
+        }
+        ctx.closePath();
+        const gradient = ctx.createRadialGradient(0, 0, asteroid.size * 0.2, 0, 0, asteroid.size);
+        gradient.addColorStop(0, '#e0e0e0');
+        gradient.addColorStop(0.5, '#888');
+        gradient.addColorStop(1, '#222');
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = '#222';
+        ctx.shadowBlur = 18;
+        ctx.globalAlpha = 0.92;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.restore();
+    }
+
+    function updateAsteroids() {
+        for (const asteroid of asteroids) {
+            asteroid.y += asteroid.speed;
+            asteroid.angle += asteroid.rotSpeed;
+            if (asteroid.y - asteroid.size > canvas.height) {
+                Object.assign(asteroid, randomAsteroid());
+                asteroid.y = -asteroid.size;
+            }
         }
     }
-}
 
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let a of asteroids) drawAsteroid(a);
-    updateAsteroids();
-    requestAnimationFrame(animate);
-}
-
-function initAsteroids() {
-    asteroids = [];
-    for (let i = 0; i < ASTEROID_COUNT; i++) {
-        asteroids.push(randomAsteroid());
-    }
-}
-
-initAsteroids();
-animate();
-
-// --- Transición de avance y nave ---
-window.startGameTransition = function() {
-    // Eliminar asteroides y preparar animación de estrellas rápidas
-    asteroids = [];
-    let stars = [];
-    const STAR_COUNT = 120;
-    for (let i = 0; i < STAR_COUNT; i++) {
-        stars.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            speed: Math.random() * 8 + 8,
-            size: Math.random() * 1.5 + 0.5
-        });
-    }
-    let animTime = 0;
-    const frames = 240; 
-    function animateStars() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function drawStars() {
         ctx.save();
-        ctx.globalAlpha = 0.9;
+        ctx.globalAlpha = 0.7;
         ctx.fillStyle = '#fff';
-        for (let s of stars) {
+        for (const star of stars) {
             ctx.beginPath();
-            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
             ctx.fill();
-            s.y += s.speed;
-            if (s.y > canvas.height) s.y = 0;
         }
         ctx.restore();
-        animTime++;
-        if (animTime < frames) {
-            requestAnimationFrame(animateStars);
-        } else {
-            showPlayerShip();
-            for (let s of stars) s.speed = Math.random() * 0.7 + 0.3;
-            function animateBackgroundStars() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.save();
-                ctx.globalAlpha = 0.7;
-                ctx.fillStyle = '#fff';
-                for (let s of stars) {
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-                    ctx.fill();
-                    s.y += s.speed;
-                    if (s.y > canvas.height) s.y = 0;
-                }
-                ctx.restore();
-                requestAnimationFrame(animateBackgroundStars);
+    }
+
+    function updateStars() {
+        for (const star of stars) {
+            star.y += star.speed;
+            if (star.y > canvas.height) {
+                star.y = -star.size;
+                star.x = Math.random() * canvas.width;
             }
-            animateBackgroundStars();
         }
     }
-    animateStars();
-}
 
-function showPlayerShip() {
-    let ship = document.getElementById('player-ship');
-    if (!ship) {
-        ship = document.createElement('div');
-        ship.id = 'player-ship';
-        ship.innerHTML = `<svg width="70" height="70" viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="35,5 55,65 35,55 15,65" fill="#4fc3f7" stroke="#fff" stroke-width="2"/>
-        <circle cx="35" cy="45" r="5" fill="#fff"/>
-        </svg>`;
-        document.body.appendChild(ship);
+    function drawFrame() {
+        if (!isRunning) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawStars();
+        updateStars();
+        for (const asteroid of asteroids) drawAsteroid(asteroid);
+        updateAsteroids();
+        animationFrame = requestAnimationFrame(drawFrame);
     }
-    setTimeout(() => ship.classList.add('visible'), 100);
-}
+
+    function initAsteroids() {
+        asteroids = [];
+        for (let i = 0; i < ASTEROID_COUNT; i++) {
+            asteroids.push(randomAsteroid());
+        }
+    }
+
+    function initStars() {
+        stars = createStarfield({
+            count: STAR_COUNT,
+            minSpeed: 0.18,
+            maxSpeed: 0.55,
+            minSize: 0.35,
+            maxSize: 1.4
+        });
+    }
+
+    function start() {
+        if (isRunning) return;
+        isRunning = true;
+        initAsteroids();
+        initStars();
+        drawFrame();
+    }
+
+    function stop() {
+        isRunning = false;
+        if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
+            animationFrame = null;
+        }
+    }
+
+    function clear() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function createStarfield(options = {}) {
+        const {
+            count = 80,
+            minSpeed = 0.3,
+            maxSpeed = 0.9,
+            minSize = 0.4,
+            maxSize = 1.6
+        } = options;
+        const stars = [];
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                speed: Math.random() * (maxSpeed - minSpeed) + minSpeed,
+                size: Math.random() * (maxSize - minSize) + minSize
+            });
+        }
+        return stars;
+    }
+
+    function handleResize() {
+        const running = isRunning;
+        stop();
+        resizeCanvas();
+        if (running) start();
+    }
+
+    resizeCanvas();
+    start();
+    window.addEventListener('resize', handleResize);
+
+    window.MenuBackground = {
+        start,
+        stop,
+        clear,
+        isRunning: () => isRunning,
+        getCanvas: () => canvas,
+        getContext: () => ctx,
+        createStarfield
+    };
+})();

@@ -72,6 +72,82 @@ body {
     top: 0; left: 0; width: 100vw; height: 100vh;
     z-index: 1;
     display: block;
+    touch-action: none;
+}
+
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 5, 12, 0.88);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1.5rem;
+    z-index: 40;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    padding: 1.5rem;
+    box-sizing: border-box;
+}
+.game-over-overlay.show {
+    display: flex;
+}
+.game-over-title {
+    color: #fff;
+    font-size: 2.4em;
+    text-align: center;
+    text-shadow: 0 0 20px #4fc3f7, 0 0 50px #1a237e;
+    margin: 0;
+}
+.game-over-btn-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.game-over-btn {
+    padding: 0.9em 2.6em;
+    border: none;
+    border-radius: 0.9em;
+    font-size: 1.1em;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: linear-gradient(90deg, #4fc3f7, #1a237e);
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(26, 35, 126, 0.45);
+    transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
+}
+.game-over-btn:hover,
+.game-over-btn:focus {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 28px rgba(63, 81, 181, 0.5);
+    background: linear-gradient(90deg, #1a237e, #4fc3f7);
+}
+.game-over-btn.secondary {
+    background: linear-gradient(90deg, #2b2b4b, #3a6cf0);
+}
+.game-over-btn.secondary:hover,
+.game-over-btn.secondary:focus {
+    background: linear-gradient(90deg, #3a6cf0, #2b2b4b);
+}
+
+.score-ui {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    font-size: 2em;
+    font-weight: bold;
+    text-shadow: 0 0 10px #4fc3f7, 0 0 20px #1a237e;
+    z-index: 20;
+    display: none;
+    pointer-events: none;
 }
 
 #play-btn {
@@ -112,8 +188,8 @@ body {
     cursor: pointer;
     transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
     outline: none;
-    backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     max-width: 90vw;
     box-sizing: border-box;
 }
@@ -147,6 +223,17 @@ body {
     }
     .container {
         padding: 0 2vw;
+    }
+    .score-ui {
+        font-size: 1.5em;
+        top: 12px;
+    }
+    .game-over-title {
+        font-size: 1.8em;
+    }
+    .game-over-btn {
+        width: 100%;
+        max-width: 260px;
     }
 }
 
