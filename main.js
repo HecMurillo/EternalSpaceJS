@@ -1,71 +1,92 @@
-// Fondo animado de asteroides para la pantalla de inicio
-const canvas = document.getElementById('asteroids-bg');
-const ctx = canvas.getContext('2d');
-let asteroids = [];
-const ASTEROID_COUNT = 25;
+// --- Manejo avanzado de sonido para menú ---
+const menuMusic = document.getElementById('menu-music');
+let soundBtn = null;
+let isMusicPlaying = false;
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-function randomAsteroid() {
-    const size = Math.random() * 30 + 20;
-    return {
-        x: Math.random() * canvas.width,
-        y: Math.random() * -canvas.height,
-        size,
-        speed: Math.random() * 2 + 1,
-        angle: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.03
-    };
+function updateSoundBtn() {
+    if (!soundBtn) return;
+    soundBtn.textContent = isMusicPlaying ? 'Quitar sonido' : 'Activar sonido';
 }
 
-function drawAsteroid(a) {
-    ctx.save();
-    ctx.translate(a.x, a.y);
-    ctx.rotate(a.angle);
-    ctx.beginPath();
-    for (let i = 0; i < 7; i++) {
-        const angle = (i / 7) * Math.PI * 2;
-        const r = a.size * (0.7 + Math.random() * 0.3);
-        ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
-    }
-    ctx.closePath();
-    ctx.fillStyle = '#b0b0b0';
-    ctx.shadowColor = '#fff';
-    ctx.shadowBlur = 10;
-    ctx.fill();
-    ctx.restore();
-}
-
-function updateAsteroids() {
-    for (let a of asteroids) {
-        a.y += a.speed;
-        a.angle += a.rotSpeed;
-        if (a.y - a.size > canvas.height) {
-            Object.assign(a, randomAsteroid());
-            a.y = -a.size;
+async function toggleMusic() {
+    if (!menuMusic) return;
+    if (isMusicPlaying) {
+        // fade out then pause
+        await fadeVolume(menuMusic, 0, 600);
+        menuMusic.pause();
+        isMusicPlaying = false;
+    } else {
+        try {
+            // start from silence and fade in
+            menuMusic.volume = 0;
+            await menuMusic.play();
+            await fadeVolume(menuMusic, 0.6, 800);
+            isMusicPlaying = true;
+        } catch (err) {
+            isMusicPlaying = false;
         }
     }
+    updateSoundBtn();
 }
 
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let a of asteroids) drawAsteroid(a);
-    updateAsteroids();
-    requestAnimationFrame(animate);
-}
-
-function initAsteroids() {
-    asteroids = [];
-    for (let i = 0; i < ASTEROID_COUNT; i++) {
-        asteroids.push(randomAsteroid());
+function createSoundButtonIfNeeded() {
+    if (document.getElementById('sound-activate')) {
+        soundBtn = document.getElementById('sound-activate');
+        return;
     }
+    soundBtn = document.createElement('button');
+    soundBtn.id = 'sound-activate';
+    soundBtn.className = 'sound-activate';
+    soundBtn.textContent = isMusicPlaying ? 'Quitar sonido' : 'Activar sonido';
+    soundBtn.addEventListener('click', toggleMusic);
+    document.body.appendChild(soundBtn);
 }
 
-initAsteroids();
-animate();
+async function tryPlayMusic() {
+    if (!menuMusic) return;
+    createSoundButtonIfNeeded();
+    try {
+        // Try autoplay with fade in
+        menuMusic.volume = 0;
+        await menuMusic.play();
+        await fadeVolume(menuMusic, 0.6, 800);
+        isMusicPlaying = true;
+    } catch (e) {
+        isMusicPlaying = false;
+    }
+    updateSoundBtn();
+}
+
+// Utility: fade volume to target over duration ms
+function fadeVolume(audioEl, target, duration) {
+    return new Promise((resolve) => {
+        const start = performance.now();
+        const initial = Number(audioEl.volume) || 0;
+        const diff = target - initial;
+        function step(now) {
+            const t = Math.min(1, (now - start) / duration);
+            audioEl.volume = initial + diff * t;
+            if (t < 1) requestAnimationFrame(step);
+            else resolve();
+        }
+        requestAnimationFrame(step);
+    });
+}
+
+// Asegurar loop siempre activo
+if (menuMusic) {
+    menuMusic.loop = true;
+    menuMusic.addEventListener('ended', () => {
+        menuMusic.currentTime = 0;
+        menuMusic.play();
+    });
+}
+
+window.addEventListener('load', () => {
+    if (menuMusic) {
+        menuMusic.loop = true;
+        menuMusic.volume = 0.6;
+    }
+    tryPlayMusic();
+});
 
