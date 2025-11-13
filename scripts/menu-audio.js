@@ -90,11 +90,45 @@ window.addEventListener('load', () => {
 });
 
 const playBtn = document.getElementById('play-btn');
+const title = document.querySelector('.title');
+const container = document.querySelector('.container');
+const startSound = document.getElementById('start-sound');
+
 if (playBtn) {
-    playBtn.addEventListener('click', () => {
-        if (menuMusic && !menuMusic.paused) menuMusic.pause();
-        isMusicPlaying = false;
-        updateSoundBtn();
-        // Aquí iría la lógica para iniciar el juego
+    playBtn.addEventListener('click', async () => {
+        // Fade out música menú
+        if (menuMusic && !menuMusic.paused) {
+            await fadeVolume(menuMusic, 0, 600);
+            menuMusic.pause();
+            isMusicPlaying = false;
+            updateSoundBtn();
+        }
+        // Sonido 8-bit generado
+        play8BitSound();
+        // Animar salida de menú
+        if (title) title.classList.add('fade-out-up');
+        if (playBtn) playBtn.classList.add('fade-out-up');
+        if (soundBtn) soundBtn.classList.add('fade-out-up');
+        // Lanzar transición de avance
+        setTimeout(() => {
+            if (container) container.classList.add('hide-menu');
+            if (window.startGameTransition) window.startGameTransition();
+        }, 700);
     });
+}
+
+// Efecto 8-bit simple para botón
+function play8BitSound() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(440, ctx.currentTime);
+    o.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.09);
+    g.gain.setValueAtTime(0.18, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.13);
+    o.connect(g).connect(ctx.destination);
+    o.start();
+    o.stop(ctx.currentTime + 0.13);
+    o.onended = () => ctx.close();
 }

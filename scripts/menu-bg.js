@@ -75,3 +75,73 @@ function initAsteroids() {
 
 initAsteroids();
 animate();
+
+// --- Transición de avance y nave ---
+window.startGameTransition = function() {
+    // Eliminar asteroides y preparar animación de estrellas rápidas
+    asteroids = [];
+    let stars = [];
+    const STAR_COUNT = 120;
+    for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            speed: Math.random() * 8 + 8,
+            size: Math.random() * 1.5 + 0.5
+        });
+    }
+    let animTime = 0;
+    const frames = 240; 
+    function animateStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = '#fff';
+        for (let s of stars) {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+            s.y += s.speed;
+            if (s.y > canvas.height) s.y = 0;
+        }
+        ctx.restore();
+        animTime++;
+        if (animTime < frames) {
+            requestAnimationFrame(animateStars);
+        } else {
+            showPlayerShip();
+            for (let s of stars) s.speed = Math.random() * 0.7 + 0.3;
+            function animateBackgroundStars() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.globalAlpha = 0.7;
+                ctx.fillStyle = '#fff';
+                for (let s of stars) {
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    s.y += s.speed;
+                    if (s.y > canvas.height) s.y = 0;
+                }
+                ctx.restore();
+                requestAnimationFrame(animateBackgroundStars);
+            }
+            animateBackgroundStars();
+        }
+    }
+    animateStars();
+}
+
+function showPlayerShip() {
+    let ship = document.getElementById('player-ship');
+    if (!ship) {
+        ship = document.createElement('div');
+        ship.id = 'player-ship';
+        ship.innerHTML = `<svg width="70" height="70" viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="35,5 55,65 35,55 15,65" fill="#4fc3f7" stroke="#fff" stroke-width="2"/>
+        <circle cx="35" cy="45" r="5" fill="#fff"/>
+        </svg>`;
+        document.body.appendChild(ship);
+    }
+    setTimeout(() => ship.classList.add('visible'), 100);
+}
