@@ -20,7 +20,7 @@ Proyecto individual para prácticas escolares y publicación en GitHub Pages.
 https://hecmurillo.github.io/EternalSpaceJS/
 
 ## 🌐 Video Explicativo
-
+https://drive.google.com/file/d/134Z-DqpufF-Q1kR9bYkMjOj7_bZtxg0O/view?usp=sharing
 
 ## 🎮 Mecánicas principales
 
