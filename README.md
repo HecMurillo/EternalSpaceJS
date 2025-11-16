@@ -8,6 +8,9 @@ Eternal Space es un juego arcade donde controlas una pequeña nave espacial que 
 
 Proyecto individual para prácticas escolares y publicación en GitHub Pages.
 
+🌐 Probar en linea 
+https://hecmurillo.github.io/EternalSpaceJS/
+
 ## 💡 Descripción
 
 - Nombre: Eternal Space
