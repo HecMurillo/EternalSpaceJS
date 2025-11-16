@@ -16,6 +16,12 @@ Proyecto individual para prácticas escolares y publicación en GitHub Pages.
 - Tecnologías: HTML5, CSS3, JavaScript (Canvas API), Web Audio API
 - Licencia: MIT
 
+## 🌐 Probar en linea
+https://hecmurillo.github.io/EternalSpaceJS/
+
+## 🌐 Video Explicativo
+
+
 ## 🎮 Mecánicas principales
 
 - Mover la nave lateralmente con A/D o flecha izquierda/derecha.
