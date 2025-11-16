@@ -45,7 +45,6 @@ Proyecto individual para prácticas escolares y publicación en GitHub Pages.
 - Botones suficientemente grandes para interacción táctil.
 - Autoplay: se intenta reproducir música al cargar; si el navegador bloquea autoplay aparece botón para activar sonido. Pulsar "Jugar" también intentará activar audio.
 
-
 ## 🔁 Comportamiento esperado al perder
 
 - Aparece overlay "Game Over" con:
